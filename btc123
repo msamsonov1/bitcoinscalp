@@ -1,0 +1,86 @@
+#Please note that the information provided in this code is solely for educational purposes and should not be considered as financial advice. I am not a licensed financial advisor and do not have any personal knowledge of your financial situation or investment goals. It is important to consult with a professional financial advisor before making any investment decisions. Any actions you take based on the information provided here are solely at your own risk.
+import ccxt
+import datetime
+import time
+
+# Replace with your Coinbase Pro API keys
+# api_key = 'your-api-key'
+# secret = 'your-secret'
+exchange = ccxt.coinbasepro({
+    # 'apiKey': api_key,
+    # 'secret': secret,
+    'enableRateLimit': True,
+})
+
+# Replace with the symbol you want to trade
+symbol = 'BTC/USD'
+# Replace with the amount you want to trade
+amount = 1
+# Replace with your desired buy and sell prices
+buy_price = None
+sell_price = None
+
+# Initialize variables
+in_position = False
+buy_time = None
+sell_time = None
+profit = 0
+i = 0
+fee_rate = 0.005 # 0.5% fee on Coinbase Pro
+trade_profit = 0
+
+while True:
+    try:
+        ticker = exchange.fetch_ticker(symbol)
+        price = ticker['last']
+        i += 1
+        #print(i)
+        
+        if not in_position:
+            # Buy
+            buy_price = price
+            print('Buy')
+            print(buy_price)
+            current_time = datetime.datetime.now()
+            sell_price = buy_price + 1 # set sell price to 1% above buy price
+            buy_time = time.time()
+            in_position = True
+        
+        if in_position and (price >= sell_price + 1 or i > 100):
+            # Sell
+            sell_price = price
+            buy_price = sell_price - 1 # set buy price to 1% below sell price
+            trade_profit = (sell_price - buy_price) * amount
+            profit += trade_profit * (1 - fee_rate)
+
+            print('Sell')
+            print(sell_price)
+            #print(trade_profit)
+
+            # Fetch the BTC-USD ticker
+            btc_usd_ticker = exchange.fetch_ticker('BTC/USD')
+
+            # Get the current BTC-USD exchange rate
+            btc_usd_rate = btc_usd_ticker['last']
+
+            # Convert the profit from BTC to USD
+            profit_usd = profit * btc_usd_rate
+
+            # Print the profit in USD
+            #print(f'Profit: {profit_usd:.2f} USD')
+
+            current_time = datetime.datetime.now()
+            sell_time = time.time()
+            in_position = False
+            buy_price = None
+            sell_price = None
+            trade_profit = None
+            i = 1
+            
+        # Wait for 1 second before checking again
+        #time.sleep(1)
+        
+    except Exception as e:
+        print(e)
+        # Wait for 1 second before trying again
+        #time.sleep(1)
